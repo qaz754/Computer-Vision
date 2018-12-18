@@ -2,8 +2,12 @@
 
 A collection of CV implementations using Pytorch and OpenCV. Will continue to upload more 
 
+## Image Classification (MNIST)
 
-## Autoencoder Generated Images Vs Ground Truth Images
+![](MNIST/prediction.png)
+![](MNIST/confusion_matrix.png)
+
+## Autoencoder Generated Images Vs Ground Truth Images (CNN_Autoencoder)
 
 ![](AutoEncoder_Generated.png)
 
