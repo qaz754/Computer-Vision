@@ -23,3 +23,10 @@ After being fed through an autoencoder, we can see that the reconstructed images
 
 ![](Vanilla_VAE/Vanilla_VAE_Generated.png)
 ![](Ground_Truth.png)
+
+## Variational Autoencoder Generated Images Vs Ground Truth Images (CNN VAE)
+
+VAE with a CNN. Unlike the vanilla VAE above, the bottleneck is rather small (Batch_size * 2 * 2). The resulting images clearly show the model struggling to generated a clear image due to the bottleneck. 
+
+![](CNN_VAE/cnn_vae_generated.png)
+![](Ground_Truth.png)
