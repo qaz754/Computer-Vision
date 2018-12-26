@@ -1,12 +1,18 @@
 
 import torch
-from util import sample_noise, show_images, discriminator_loss, generator_loss
+import os
+
+from util import sample_noise, show_images
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def run_vanilla_gan(D, G, D_solver, G_solver, loader, show_every=250, batch_size=128, noise_size=96, num_epochs = 10):
+from torchvision.utils import save_image
+
+from image_to_gif import image_to_gif
+
+def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader, show_every=250, batch_size=128, noise_size=96, num_epochs = 10):
     """
     Vanilla GAN Trainer
 
@@ -25,7 +31,8 @@ def run_vanilla_gan(D, G, D_solver, G_solver, loader, show_every=250, batch_size
     """
 
     iter_count = 0
-    images = []
+    filelist = []
+
 
     for epoch in range(num_epochs):
         for x, _ in loader:
@@ -59,9 +66,23 @@ def run_vanilla_gan(D, G, D_solver, G_solver, loader, show_every=250, batch_size
             if (iter_count % show_every == 0):
                 print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, d_total_error.item(), g_error.item()))
                 imgs_numpy = fake_images.data.cpu().numpy()
-                show_images(imgs_numpy[0:16])
+
+                '''filename used for saving the image'''
+                directory = './img/'
+                filename = 'image_%s.png' %iter_count
+                filelist.append(filename)
+
+                filename = os.path.join('%s' % directory, '%s' % filename)
+
+
+                show_images(imgs_numpy[0:16], filename, iter_count)
                 plt.show()
                 print()
+
+
+
             iter_count += 1
 
+    #create a gif
+    image_to_gif('./img/', filelist, duration=1)
 

@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
+from textwrap import wrap
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -123,7 +124,7 @@ def get_optimizer(model, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.5, 0.999))
     return optimizer
 
-def show_images(images):
+def show_images(images, filename, iterations):
     images = np.reshape(images, [images.shape[0], -1])  # images reshape to (batch_size, D)
     sqrtn = int(np.ceil(np.sqrt(images.shape[0])))
     sqrtimg = int(np.ceil(np.sqrt(images.shape[1])))
@@ -138,5 +139,10 @@ def show_images(images):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(img.reshape([sqrtimg,sqrtimg]))
-    return
+
+        '''global title'''
+        plt.suptitle('Vanilla GANs After %s iterations' %iterations)
+        plt.imshow(img.reshape([sqrtimg, sqrtimg]))
+        plt.savefig(filename)
+
+
