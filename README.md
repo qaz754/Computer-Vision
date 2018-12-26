@@ -30,3 +30,9 @@ VAE with a CNN. Unlike the vanilla VAE above, the bottleneck is rather small (Ba
 
 ![](CNN_VAE/cnn_vae_generated.png)
 ![](Ground_Truth.png)
+
+## Vanilla GANs (Linear Layers)
+
+GANs training over time on MNIST data
+
+![](Vanilla_GANs.gif)
