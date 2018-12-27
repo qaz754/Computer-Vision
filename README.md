@@ -36,3 +36,9 @@ VAE with a CNN. Unlike the vanilla VAE above, the bottleneck is rather small (Ba
 GANs training over time on MNIST data
 
 ![](Vanilla_GANs.gif)
+
+## LSGANs (Linear Layers)
+
+Same network architecture as Vanilla GANs but with Least Square loss
+
+![](LS_GANs/ls_GANs.gif)
