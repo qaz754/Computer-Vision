@@ -37,8 +37,16 @@ GANs training over time on MNIST data
 
 ![](Vanilla_GANs.gif)
 
+## DCGANS
+
+Same cost function as Vanilla GANs but with Deep convolutional layers. Produces better clearer images compared to the Vanilla GANs
+
+![](DC-GANs/movie.gif)
+
 ## LSGANs (Linear Layers)
 
 Same network architecture as Vanilla GANs but with Least Square loss
 
 ![](LS_GANs/ls_GANs.gif)
+
+
