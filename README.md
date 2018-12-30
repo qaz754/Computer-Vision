@@ -52,5 +52,6 @@ Same cost function as Vanilla GANs but with Deep convolutional layers. Produces 
 ## DCGANs with LS Loss
 
 Same architecture as DCGANs but with LeastSquares loss 
-![](LS_DCGANs/movie.gif)
+
+![](LS_DCGANs/ls-dcgan.gif)
 
