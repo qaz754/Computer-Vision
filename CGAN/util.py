@@ -82,7 +82,7 @@ def bce_loss(input, target):
     return loss.mean()
 
 
-def discriminator_loss(predicted_labels, labels):
+def discriminator_loss(logits_real, logits_fake):
     """
     Computes the discriminator loss for Vanilla GANs
 
@@ -91,7 +91,12 @@ def discriminator_loss(predicted_labels, labels):
     :return: PyTorch Tensor containing the loss for the discriminator
     """
 
-    loss = nn.CrossEntropyLoss()(predicted_labels, labels) #fake data
+    labels = torch.ones(logits_real.size()).to(device) #label used to indicate whether it's real or not
+
+    loss_real = bce_loss(logits_real, labels) #real data
+    loss_fake = bce_loss(logits_fake, 1 - labels) #fake data
+
+    loss = loss_real + loss_fake
 
     return loss.to(device)
 
@@ -109,6 +114,40 @@ def generator_loss(logits_fake):
 
     return loss.to(device)
 
+
+def LS_discriminator_loss(logits_real, logits_fake):
+    """
+    Computes the discriminator loss for Vanilla GANs
+
+    :param logits_real: PyTorch Tensor of shape(N, ). Gives scores for the real data
+    :param logits_fake: PyTorch Tensor of shape(N, ). Gives scores for the fake data
+    :return: PyTorch Tensor containing the loss for the discriminator
+    """
+
+    labels = torch.ones(logits_real.size()).to(device) #label used to indicate whether it's real or not
+
+    #A, B, C values based on https://arxiv.org/pdf/1611.04076v3.pdf Page 8
+    loss_real = 1/2 * ((logits_real - labels) ** 2).mean() #real data
+    loss_fake = 1/2 * ((logits_fake) ** 2).mean() #fake data
+
+    loss = loss_real + loss_fake
+
+    return loss.to(device)
+
+def LS_generator_loss(logits_fake):
+    """
+    Computes the generator loss
+
+    :param logits_fake: PyTorch Tensor of shape (N, ). Gives scores for the real data
+    :return: PyTorch tensor containing the loss for the generator
+    """
+
+    labels = torch.ones(logits_fake.size()).to(device)
+
+    loss = 1/2 * ((logits_fake - labels) ** 2).mean()
+
+    return loss.to(device)
+
 def get_optimizer(model, lr=0.001):
     """
     Takes in PyTorch model and returns the Adam optimizer associated with it
@@ -119,7 +158,7 @@ def get_optimizer(model, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr, betas=(0.5, 0.999))
     return optimizer
 
-def show_images(images, filename, iterations):
+def show_images(images, filename, iterations, title=None):
     images = np.reshape(images, [images.shape[0], -1])  # images reshape to (batch_size, D)
     sqrtn = int(np.ceil(np.sqrt(images.shape[0])))
     sqrtimg = int(np.ceil(np.sqrt(images.shape[1])))
@@ -136,7 +175,9 @@ def show_images(images, filename, iterations):
         ax.set_aspect('equal')
 
         '''global title'''
-        plt.suptitle('CGANs After %s iterations' %iterations)
+        if title == None:
+            title = 'LS-CGANs After %s iterations'
+        plt.suptitle(title %iterations)
         plt.imshow(img.reshape([sqrtimg, sqrtimg]))
         plt.savefig(filename)
 
@@ -166,4 +207,5 @@ def categorical_label_generator(batch_size=128, n_classes=10):
     array = np.random.choice(n_classes, batch_size)
 
     return array
+
 
