@@ -57,7 +57,10 @@ Same architecture as DCGANs but with LeastSquares loss
 
 ## CGAN
 
-[Paper](https://arxiv.org/abs/1411.1784)
+[CGAN](https://arxiv.org/abs/1411.1784) with a LS loss
+
+![](CGAN/movie.gif)
+
 
 ## InfoGAN 
 
