@@ -65,3 +65,12 @@ Same architecture as DCGANs but with LeastSquares loss
 ## InfoGAN 
 
 [Paper](https://arxiv.org/abs/1606.03657)
+
+## CVAE 
+
+For this reconstruction task, MNIST images were cropped to only keep the middle 4 columns of pixel values, and CVAE model was told to reconstruct the original image using the cropped images as inputs. 
+
+Cropped Images / Reconstructed Images / Original Images
+
+![Cropped Image](CVAE/cropped_image.png) ![Reconstructed Image](CVAE/output_image.png) ![Original Image](CVAE/original_image.png)
+
