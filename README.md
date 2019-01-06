@@ -74,3 +74,13 @@ Cropped Images / Reconstructed Images / Original Images
 
 ![Cropped Image](CVAE/cropped_image.png) ![Reconstructed Image](CVAE/output_image.png) ![Original Image](CVAE/original_image.png)
 
+## AE-GAN 
+
+[Paper](https://arxiv.org/pdf/1511.05644.pdf)
+
+Adversarial Autoencoder that combines AE and GANs. This Pytorch implementation uses VAE instead of a vanilla AE. 
+
+![](AEGAN/movie.gif)
+
+
+
