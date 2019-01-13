@@ -2,18 +2,15 @@
 import torch
 import os
 
-from util import sample_noise, show_images, get_patches, patch_discrim
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+from util import sample_noise, show_images
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-
-from torchvision.utils import save_image
 
 from image_to_gif import image_to_gif
 
-def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader, show_every=250, batch_size=128, noise_size=96, num_epochs = 10):
+def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader, show_every=10, batch_size=128, noise_size=96, num_epochs = 10):
     """
     Vanilla GAN Trainer
 
@@ -41,21 +38,15 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
                 continue
             D_solver.zero_grad()
 
-            kernel_window = 26
-
             '''Real Images'''
             real_data = x.to(device) #sampled batch of data
-            real_data = 2 * (real_data - 0.5)
-            real_patches = get_patches(real_data, kernel_window)
+            logits_real = D(2 * (real_data - 0.5)).to(device) #returns logit of real data.
 
-            logits_real = patch_discrim(real_patches, batch_size, D)
             '''Train Discriminator'''
 
             g_fake_seed = sample_noise(batch_size, noise_size).to(device) #Sample minibatch of m noise samples
-            fake_images = G(g_fake_seed).view(batch_size, 1, 28, 28).detach() #Sample minibatch of m examples from data generating distribution
-
-            fake_patches = get_patches(fake_images, kernel_window)
-            logits_fake = patch_discrim(fake_patches, batch_size, D)
+            fake_images = G(g_fake_seed).detach() #Sample minibatch of m examples from data generating distribution
+            logits_fake = D(fake_images.view(batch_size, 1, 28, 28)) #get the logits for the fake images using the Discirminator
 
             d_total_error = discriminator_loss(logits_real, logits_fake) #negative Sigmoid BCE loss for the discriminator
             d_total_error.backward()
@@ -64,17 +55,17 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             '''Train Generator'''
             G_solver.zero_grad()
             g_fake_seed = sample_noise(batch_size, noise_size).to(device) #Sample minibatch of m noise samples from noise prior
-            fake_images = G(g_fake_seed).view(batch_size, 1, 28, 28) #Sample minibatch of m examples from data generating distribution
+            fake_images = G(g_fake_seed) #Sample minibatch of m examples from data generating distribution
 
-            fake_patches = get_patches(fake_images, kernel_window)
-            gen_logits_fake = patch_discrim(fake_patches, batch_size, D)
-
+            gen_logits_fake = D(fake_images.view(batch_size, 1, 28, 28)) #get the negative sigmoid BCE loss for the discriminator
             g_error = generator_loss(gen_logits_fake) #get the loss for the generator
             g_error.backward()
             G_solver.step() #One step Descent into the loss
 
+            print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, d_total_error.item(), g_error.item()))
+
             if (iter_count % show_every == 0):
-                print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, d_total_error.item(), g_error.item()))
+
                 imgs_numpy = fake_images.data.cpu().numpy()
 
                 '''filename used for saving the image'''

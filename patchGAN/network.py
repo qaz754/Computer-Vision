@@ -9,17 +9,14 @@ def discriminator(batch_size):
     From https://arxiv.org/abs/1511.06434.pdf
     """
     model = nn.Sequential(
-        Unflatten(batch_size, 1, 26, 26),
-        nn.Conv2d(1, 32, 5, stride=1),
-        nn.LeakyReLU(0.01),
-        nn.MaxPool2d(2, 2),
-        nn.Conv2d(32, 64, 5, stride=1),
-        nn.LeakyReLU(0.01),
-        nn.MaxPool2d(2, 2),
-        Flatten(),
-        nn.Linear(3 * 3 * 64, 3 * 3 * 64),
-        nn.LeakyReLU(0.01),
-        nn.Linear(3 * 3 * 64, 1)
+        Unflatten(batch_size, 1, 28, 28),
+        nn.Conv2d(1, 32, 4, 2, 1),
+        nn.InstanceNorm2d(32),
+        nn.LeakyReLU(0.2, True),
+        nn.Conv2d(32, 64, 4, 2, 1),
+        nn.InstanceNorm2d(64),
+        nn.LeakyReLU(0.2, True),
+        nn.Conv2d(64, 1, 4, 1, 1)
     )
 
     return model

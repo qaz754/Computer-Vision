@@ -11,7 +11,8 @@ import matplotlib.gridspec as gridspec
 
 from textwrap import wrap
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 def sample_noise(batch_size, dim):
     """
@@ -145,32 +146,3 @@ def show_images(images, filename, iterations):
         plt.suptitle('Patch-GANs After %s iterations' %iterations)
         plt.imshow(img.reshape([sqrtimg, sqrtimg]))
         plt.savefig(filename)
-
-def get_patches(image_tensor, kernel_size=None, stride=1):
-    """
-    Given an image_tensor of batch of images in B * C * W * H, return a batch of flattened tensor with kernel_size columns,
-    :param image_tensor (4D Tensor): (B, C, W, H) Image tensor
-    :param kernel_size (int): size of the kernel to be used for sliding window
-    :param stride (int): how many steps to slide
-    :return:
-    """
-
-    if kernel_size == None:
-        '''ImageDiscriminator'''
-        '''Really no reason to call the function'''
-        return image_tensor
-
-    patches = F.unfold(image_tensor, kernel_size=kernel_size)
-
-    return patches
-
-def patch_discrim(image_tensor, batch_size, discriminator):
-
-    num_windows = image_tensor.shape[2]
-    logit_holder = torch.zeros((batch_size, num_windows)).to(device)
-    for i in range(num_windows):
-        logit_holder += discriminator(image_tensor[:, :, i])  # returns logit of real data.
-
-    logit_holder = logit_holder / num_windows
-
-    return logit_holder
