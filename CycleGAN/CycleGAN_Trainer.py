@@ -126,13 +126,13 @@ class trainer():
 
             if e % 1 == 0:
 
-                fpred_image_list = util.save_images_to_directory(f_pred, directory, 'f_pred_image_%s.png' % e, fpred_image_list)
-                gpred_image_list = util.save_images_to_directory(g_pred, directory, 'g_pred_image_%s.png' % e,
-                                                                 gpred_image_list)
-                input_image_list = util.save_images_to_directory(input_image, directory, 'input_image_%s.png' % e,
-                                                                 input_image_list)
-                target_image_list = util.save_images_to_directory(target_image, directory, 'target_image_%s.png' % e,
-                                                                  target_image_list)
+                fpred_image_list.append(util.save_images_to_directory(f_pred, directory, 'f_pred_image_%s.png' % e, fpred_image_list))
+                gpred_image_list.append(util.save_images_to_directory(g_pred, directory, 'g_pred_image_%s.png' % e,
+                                                                 gpred_image_list))
+                input_image_list.append(util.save_images_to_directory(input_image, directory, 'input_image_%s.png' % e,
+                                                                 input_image_list))
+                target_image_list.append(util.save_images_to_directory(target_image, directory, 'target_image_%s.png' % e,
+                                                                  target_image_list))
 
 
                 torch.save(self.model[0].state_dict(), './F_Gen.pth')

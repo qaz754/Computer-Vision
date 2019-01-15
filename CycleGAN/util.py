@@ -223,4 +223,4 @@ def save_images_to_directory(image_tensor, directory, filename, namelist):
     save_name = os.path.join('%s' % directory, '%s' % filename)
     save_image(image, save_name)
 
-    return namelist.append(filename)
+    return filename
