@@ -82,29 +82,4 @@ Adversarial Autoencoder that combines AE and GANs. This Pytorch implementation u
 
 ![](AEGAN/movie.gif)
 
-## CycleGAN
-
-[Paper](https://arxiv.org/pdf/1703.10593.pdf)
-
-The training dataset contains around 50k paired images (edge and shoes). The model was trained for 1 epoch and the GIFS below are results of running the model on the validation set. The training took around 7 hours and took up close to all 11GB of the CUDA memory on my 1080TI.
-
-
-# Ground Truth Edge => Shoe Prediction
-
-![](CycleGAN/Input.gif)
-![](CycleGAN/F_Pred.gif)
-
-# Ground Shoe => Edge Prediction
-
-![](CycleGAN/Target.gif)
-![](CycleGAN/G_Pred.gif)
-
-# Shoe => Edge => Shoe Reconstruction
-
-![](CycleGAN/FGF_Reconstruct.gif)
-
-# Edge => Shoe => Edge Reconstruction
-
-![](CycleGAN/GFG_Reconstruct.gif)
-
 
