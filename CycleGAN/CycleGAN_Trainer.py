@@ -10,8 +10,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 from collections import deque
 
-
-
 class trainer():
 
     def __init__(self, epochs, trainloader, model, optimizer, criterion, print_every=50, cycle_lambda=1):
@@ -43,7 +41,13 @@ class trainer():
 
 
         for e in range(self.epochs):
+
             running_loss = 0
+
+            torch.save(self.model[0].state_dict(), './model/G_Gen_%s.pth' % e)
+            torch.save(self.model[1].state_dict(), './model/F_Gen_%s.pth' % e)
+            torch.save(self.model[2].state_dict(), './model/G_Discrim_%s.pth' % e)
+            torch.save(self.model[3].state_dict(), './model/F_Discrim_%s.pth' % e)
 
             for input_image, target_image in iter(self.trainloader):
 
@@ -126,19 +130,15 @@ class trainer():
 
             if e % 1 == 0:
 
-                fpred_image_list.append(util.save_images_to_directory(f_pred, directory, 'f_pred_image_%s.png' % e, fpred_image_list))
-                gpred_image_list.append(util.save_images_to_directory(g_pred, directory, 'g_pred_image_%s.png' % e,
-                                                                 gpred_image_list))
-                input_image_list.append(util.save_images_to_directory(input_image, directory, 'input_image_%s.png' % e,
-                                                                 input_image_list))
-                target_image_list.append(util.save_images_to_directory(target_image, directory, 'target_image_%s.png' % e,
-                                                                  target_image_list))
+                fpred_image_list.append(util.save_images_to_directory(f_pred, directory, 'f_pred_image_%s.png' % e))
+                gpred_image_list.append(util.save_images_to_directory(g_pred, directory, 'g_pred_image_%s.png' % e))
+                input_image_list.append(util.save_images_to_directory(input_image, directory, 'input_image_%s.png' % e))
+                target_image_list.append(util.save_images_to_directory(target_image, directory, 'target_image_%s.png' % e))
 
-
-                torch.save(self.model[0].state_dict(), './F_Gen.pth')
-                torch.save(self.model[1].state_dict(), './D_Gen.pth')
-                torch.save(self.model[2].state_dict(), './G_Discrim.pth')
-                torch.save(self.model[3].state_dict(), './F_Discrim.pth')
+                torch.save(self.model[0].state_dict(), './model/G_Gen_%s.pth' %e)
+                torch.save(self.model[1].state_dict(), './model/F_Gen_%s.pth' %e)
+                torch.save(self.model[2].state_dict(), './model/G_Discrim_%s.pth' %e)
+                torch.save(self.model[3].state_dict(), './model/F_Discrim_%s.pth' %e)
 
         image_to_gif('./img/', fpred_image_list, duration=1, gifname='fpred')
         image_to_gif('./img/', gpred_image_list, duration=1, gifname='gpred')

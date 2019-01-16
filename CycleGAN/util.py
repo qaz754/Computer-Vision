@@ -216,7 +216,7 @@ def raw_score_plotter(scores):
     plt.close()
 
 
-def save_images_to_directory(image_tensor, directory, filename, namelist):
+def save_images_to_directory(image_tensor, directory, filename):
     directory = directory
     image = image_tensor.cpu().data
 
