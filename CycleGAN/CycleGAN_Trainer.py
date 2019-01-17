@@ -66,7 +66,7 @@ class trainer():
                 '''Train Discriminator'''
 
                 g_fake_logits = self.model[2](G_deque.sample())
-                g_real_logits = self.model[2](input_image)
+                g_real_logits = self.model[2](target_image)
 
                 g_discrim_loss = util.discriminator_loss(g_real_logits, g_fake_logits)
 
@@ -82,9 +82,8 @@ class trainer():
 
                 '''F_discriminator'''
 
-
                 f_fake_logits = self.model[3](F_deque.sample())
-                f_real_logits = self.model[3](target_image)
+                f_real_logits = self.model[3](input_image)
 
                 f_discrim_loss = util.discriminator_loss(f_real_logits, f_fake_logits)
 
@@ -96,11 +95,10 @@ class trainer():
                 '''Cycle Consistency'''
 
                 '''F(x) -> G(F(x) -> X'''
-
                 FGF_pred = self.model[1](self.model[0](input_image))
-                GFG_pred = self.model[0](self.model[1](target_image))
-
                 FGF_loss = self.criterion(FGF_pred, input_image)
+
+                GFG_pred = self.model[0](self.model[1](target_image))
                 GFG_loss = self.criterion(GFG_pred, target_image)
 
                 cycle_loss = FGF_loss + GFG_loss
