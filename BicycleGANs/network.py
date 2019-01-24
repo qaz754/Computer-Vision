@@ -89,6 +89,7 @@ class AutoEncoder_Unet(nn.Module):
     def forward(self, x, z_code):
 
         z_code = spatially_replicate(z_code, x.shape[3])
+
         '''Implementation where the noise is injected to the input only'''
         x = torch.cat((x, z_code), 1)
 

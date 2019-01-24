@@ -9,9 +9,12 @@ from torchvision.utils import save_image
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+from collections import deque
+import numpy as np
+
 class trainer():
 
-    def __init__(self, epochs, trainloader, model, optimizer, criterion, print_every=5, lambd_l1=1, lamb_kl=1, lamb_latent=1):
+    def __init__(self, epochs, trainloader, model, optimizer, criterion, print_every=5, lambd_l1=1, lamb_kl=1, lamb_latent=1, checkpoint_path = './model/checkpoint_424.pth', resume=False):
 
         self.epochs = epochs
         self.trainloader = trainloader
@@ -23,8 +26,58 @@ class trainer():
         self.kl_lamb = lamb_kl
         self.lamb_latent = lamb_latent
 
+        self.checkpoint_path = checkpoint_path
+        self.resume = resume
+
+    def save_progress(self, epoch, loss):
+
+        #TODO get rid of hardcoding and come up with an automated way.
+        directory = './model/'
+        filename = 'checkpoint_%s.pth' % epoch
+
+        path = os.path.join('%s' % directory, '%s' % filename)
+
+        torch.save({
+            'epoch': epoch,
+            'loss': loss,
+            'model0_state_dict': self.model[0].state_dict(),
+            'model1_state_dict': self.model[1].state_dict(),
+            'model2_state_dict': self.model[2].state_dict(),
+            'model3_state_dict': self.model[3].state_dict(),
+            'optimizer0_state_dict': self.optimizer[0].state_dict(),
+            'optimizer1_state_dict': self.optimizer[1].state_dict(),
+            'optimizer2_state_dict': self.optimizer[2].state_dict(),
+            'optimizer3_state_dict': self.optimizer[3].state_dict(),
+        }, path)
+
+        print("Saving Training Progress")
+
+    def load_progress(self,):
+
+        # TODO get rid of hardcoding and come up with an automated way.
+
+        checkpoint = torch.load(self.checkpoint_path)
+
+        self.model[0].load_state_dict(checkpoint['model0_state_dict'])
+        self.model[1].load_state_dict(checkpoint['model1_state_dict'])
+        self.model[2].load_state_dict(checkpoint['model2_state_dict'])
+        self.model[3].load_state_dict(checkpoint['model3_state_dict'])
+
+        self.optimizer[0].load_state_dict(checkpoint['optimizer0_state_dict'])
+        self.optimizer[1].load_state_dict(checkpoint['optimizer1_state_dict'])
+        self.optimizer[2].load_state_dict(checkpoint['optimizer2_state_dict'])
+        self.optimizer[3].load_state_dict(checkpoint['optimizer3_state_dict'])
+
+        epoch = checkpoint['epoch']
+        loss = checkpoint['loss']
+
+        print("Training Loss From Last Session")
+        return epoch, loss
+
     def train(self):
         steps = 0
+
+        last_100_loss = deque(maxlen=100)
 
         #used to make gifs later
         pred_image_list = []
@@ -32,6 +85,14 @@ class trainer():
         input_image_list = []
 
         train_loss = []
+
+        directory = './img/'
+
+        epoch = 0
+
+        if self.resume:
+            epoch, loss = self.load_progress()
+
 
         for e in range(self.epochs):
             running_loss = 0
@@ -129,45 +190,25 @@ class trainer():
 
                 running_loss += Generator_loss.item()
                 train_loss.append(Generator_loss.item())
+                last_100_loss.append(Generator_loss.item())
 
                 if steps % self.print_every == 0:
                     print("Epoch: {}/{}...".format(e + 1, self.epochs),
-                          "LossL {:.4f}".format(running_loss))
-
-                running_loss = 0
+                          "Last 100 {:.4f}".format(np.mean(last_100_loss)))
 
             if e % 1 == 0:
 
-                pred = image_pred.cpu().data
-                directory = './img/'
-                filename = 'pred_image_%s.png' % e
-                pred_image_list.append(filename)
-
-                filename = os.path.join('%s' % directory, '%s' % filename)
-                save_image(pred, filename)
-
-                target = target_image.cpu().data
-                directory = './img/'
-                filename = 'real_image%s.png' % e
-                target_image_list.append(filename)
-
-                filename = os.path.join('%s' % directory, '%s' % filename)
-                save_image(target, filename)
-
-                input = input_image.cpu().data
-                directory = './img/'
-                filename = 'Input_Image_%s.png' % e
-                input_image_list.append(filename)
-
-                filename = os.path.join('%s' % directory, '%s' % filename)
-                save_image(input, filename)
-
-                torch.save(self.model[0].state_dict(), './pix2pix_G.pth')
-                torch.save(self.model[1].state_dict(), './pix2pix_cVAE_D.pth')
-                torch.save(self.model[2].state_dict(), './pix2pix_cLR_D.pth')
-                torch.save(self.model[3].state_dict(), './pix2pix_E.pth')
+                pred_image_list.append(util.save_images_to_directory(image_pred, directory, 'g_pred_image_%s.png' % steps))
+                input_image_list.append(
+                    util.save_images_to_directory(input_image, directory, 'input_image_%s.png' % steps))
+                target_image_list.append(
+                    util.save_images_to_directory(target_image, directory, 'target_image_%s.png' % steps))
 
                 util.raw_score_plotter(train_loss)
+                if e % 10 == 0:
+                    self.save_progress(e, np.mean(last_100_loss))
+
+        self.save_progress(-1, np.mean(last_100_loss))
 
         image_to_gif('./img/', pred_image_list, duration=1, gifname='pred')
         image_to_gif('./img/', target_image_list, duration=1, gifname='target')

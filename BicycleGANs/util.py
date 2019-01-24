@@ -4,6 +4,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+import os
+from torchvision.utils import save_image
 
 from torch.distributions import Normal
 
@@ -233,10 +235,11 @@ def spatially_replicate(z_code, output_shape):
     :param z_code (tensor): hidden code
     :return: Batch X H X W X Z sized tensor
     '''
+    #TODO Make it so that a non square images can be created with this funtion. output_shape needs to take in a tuple of values, or even
+    #TODO Have the function take in a couple of values.
+    output = z_code.view(z_code.size(0), z_code.size(1), 1, 1)
 
-    output = z_code.repeat(output_shape, output_shape)
-
-    return output.view(z_code.shape[0], z_code.shape[1], output_shape, output_shape)
+    return output.expand(z_code.size(0), z_code.size(1), output_shape, output_shape)
 
 def randn_z_dimension(output_shape):
     '''
@@ -248,3 +251,12 @@ def randn_z_dimension(output_shape):
     output = torch.randn(output_shape)
 
     return output
+
+def save_images_to_directory(image_tensor, directory, filename):
+    directory = directory
+    image = image_tensor.cpu().data
+
+    save_name = os.path.join('%s' % directory, '%s' % filename)
+    save_image(image, save_name)
+
+    return filename

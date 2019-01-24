@@ -7,19 +7,17 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 
 from PIL import Image
-from skimage import color
-
 from image_folder import get_images
 
 import torchvision.transforms.functional as TVF
 
-class Pix2Pix_AB_Dataloader(Dataset):
+class AB_Combined_ImageLoader(Dataset):
     """
     Dataloader class used to load in data in an image folder.
-    Made it so that it performs a fixed set of transformations to a pair of images in different folders
+    This works so that an image of 2 images A, B that are concatenated horizontally can be split up with the right transformations
     """
 
-    def __init__(self, img_folder, target_folder, transform=None, size =256, randomcrop = 224, hflip=0.5, vflip=0.5):
+    def __init__(self, img_folder, transform=None, shuffle=True, train=True, num_images=2, size=256, randomcrop=196, hflip=0.5, vflip=0.5):
         '''
 
         :param img_folder:
@@ -29,14 +27,17 @@ class Pix2Pix_AB_Dataloader(Dataset):
         '''
 
         self.img_folder = img_folder
-        self.size = size #for resizing
+        self.size = size
+        self.num_images = num_images #for resizing
         self.randomCrop = randomcrop #randomcrop
         self.hflip = hflip
         self.vflip = vflip
         self.transforms = transform
+        self.shuffle = shuffle
+        self.train = train
 
         self.file_names = get_images(img_folder)
-        self.target_names = get_images(target_folder)
+        #self.target_names = get_images(target_folder)
 
     def __len__(self):
 
@@ -44,81 +45,54 @@ class Pix2Pix_AB_Dataloader(Dataset):
 
     def __getitem__(self, index):
 
-        left_image = Image.open(self.file_names[index]).convert('RGB')
-        right_image = Image.open(self.target_names[index]).convert('RGB')
+        #TODO: Add some randomization to shuffle paried data.
 
+        combined_image = Image.open(self.file_names[index]).convert('RGB')
 
-        '''
-        Resize
-        '''
-        resize = transforms.Resize(size=(self.size, self.size))
-        left_image = resize(left_image)
-        right_image = resize(right_image)
+        resize = transforms.Resize(size=(self.size, 2 * self.size))
+        combined_image = resize(combined_image)
 
-        '''
-        RandomCrop
-        '''
+        combined_image = crop_PIL(combined_image, self.num_images, crop_size=self.randomCrop, random=False)
 
-        i, j, h, w = transforms.RandomCrop.get_params(
-            left_image, output_size = (self.randomCrop, self.randomCrop)
-        )
-        left_image = TVF.crop(left_image, i, j, h, w)
-        right_image = TVF.crop(right_image, i, j, h, w)
+        left_image = combined_image[0]
+        right_image = combined_image[1]
 
-        if random.random() >= self.hflip:
-            left_image = TVF.hflip(left_image)
-            right_image = TVF.hflip(right_image)
+        if self.train:
 
-        if random.random() >= self.vflip:
-            left_image = TVF.vflip(left_image)
-            right_image = TVF.vflip(right_image)
+            if random.random() >= self.hflip:
+                left_image = TVF.hflip(left_image)
+                right_image = TVF.hflip(right_image)
+
+            if random.random() >= self.vflip:
+                left_image = TVF.vflip(left_image)
+                right_image = TVF.vflip(right_image)
 
         left_image = self.transforms(left_image)
         right_image = self.transforms(right_image)
 
         return left_image, right_image
 
-def GrayScaleAndColor(image):
-    '''
-    RGB2LAB converter that takes in a tensor of an image and converts it to LAB image
-    :param image (tensor): a tensor of an image
-    :return: returns a list that contains a grayscale image and the corresponding color image
-    '''
 
-    im = np.array(image)
-    im = np.rollaxis(im, 0, 3)
-    #image tensor has C X Width X height dimensions
-    #color.xyz2lab takes in a ndarray of width X height X C
+def crop_PIL(image, num_image, crop_size=0, random=False):
 
-    lab = color.rgb2lab(im).astype(np.float32)
-    lab_t = transforms.ToTensor()(lab)
+    #assumes channel X Height X Width
 
-    #These values are straight from Jun-Yanz github
-    A = lab_t[[0], ...] / 50.0 - 1.0
-    B = lab_t[[1, 2], ...] / 110.0
+    w = image.size[0]
+    h = image.size[1]
 
-    return [A, B]
+    assert w % num_image == 0, "The Width is not a multiple of the number of splits"
+    w_cutoff = w // num_image
 
+    w_crop = 0
+    h_crop = 0
 
-def GrayScaleAndColor1(image):
-    '''
-    RGB2LAB converter that takes in a tensor of an image and converts it to LAB image
-    :param image (tensor): a tensor of an image
-    :return: returns a list that contains a grayscale image and the corresponding color image
-    '''
+    if random != False:
+        w_crop = np.random.randint(0, w_cutoff - crop_size)
+        h_crop = np.random.randint(0, h - crop_size)
 
-    transform_to_gray = transforms.Compose([
-        transforms.Grayscale(1)
-    ])
+    image_list = []
+    for i in range(num_image):
+        starting_point = i * w_cutoff + w_crop
+        image_list.append(image.crop((starting_point, h_crop, crop_size + starting_point, crop_size + h_crop)))
 
-    to_tensor_transoform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5),
-                             (0.5, 0.5, 0.5)),
-    ])
-
-    gray = transform_to_gray(image)
-    gray = to_tensor_transoform(gray)
-
-    image = to_tensor_transoform(image)
-    return [gray, image]
+    return image_list

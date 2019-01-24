@@ -1,5 +1,5 @@
 
-from data_loader import Pix2Pix_AB_Dataloader, GrayScaleAndColor1
+from data_loader import AB_Combined_ImageLoader
 from image_folder import get_images, get_folders
 
 import os
@@ -10,19 +10,20 @@ import torch.optim as optim
 import torch.nn as nn
 #from augmentation import Rescale, RandomCrop, Normalize, ToTensor, RotateScale, HorizontalFlip, VerticalFlip
 
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-image_dir = '/home/youngwook/Downloads/Carvana'
+image_dir = '/home/youngwook/Downloads/edges2shoes'
 folder_names = get_folders(image_dir)
 
-train_folder = folder_names[1]
-target_folder = folder_names[2]
+train_folder = folder_names[2]
+val_folder = folder_names[1]
+
 
 from torchvision.transforms import transforms
 # Define a transform to pre-process the training images.
 
-resize = 256
+num_images = 2
+size = 256
 randomCrop = 224
 
 transform_1 = transforms.Compose([
@@ -31,12 +32,15 @@ transform_1 = transforms.Compose([
                          (0.5, 0.5, 0.5)),
     ])
 
-train_data = Pix2Pix_AB_Dataloader(train_folder, target_folder, transform=transform_1, size = resize, randomcrop=randomCrop)
-#train_data = Pix2Pix_Dataloader(train_folder, transform=transform_train, additional_transform=GrayScaleAndColor1)
+train_data = AB_Combined_ImageLoader(train_folder, transform=transform_1, size=size, num_images=num_images, randomcrop=randomCrop)
 
 train_loader = DataLoader(train_data, batch_size=12,
                         shuffle=True, num_workers=4)
 
+test_data = AB_Combined_ImageLoader(val_folder, transform=transform_1, size=randomCrop, num_images=num_images, train=False, randomcrop=randomCrop, hflip=0, vflip=0)
+
+test_loader = DataLoader(test_data, batch_size=12,
+                        shuffle=True, num_workers=4)
 
 from network import AutoEncoder_Unet, MultiScaleDiscriminator, Encoder
 
@@ -61,12 +65,8 @@ model_list = [AE, D_cVAE, D_cLR, E]
 
 epochs = 30
 
-for e in range(epochs):
-    running_loss = 0
 
-    for input_image, target_image in iter(train_loader):
+trainer = trainer(epochs, train_loader, model_list, optim_list, criterion, resume=False, lambd_l1=10, lamb_kl=0.01, lamb_latent=0.5)
 
-        trainer = trainer(epochs, train_loader, model_list, optim_list, criterion, lambd_l1=10, lamb_kl=0.01, lamb_latent=0.5)
-
-        #trains the model
-        trainer.train()
+#trains the model
+trainer.train()
