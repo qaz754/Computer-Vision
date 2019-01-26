@@ -25,16 +25,15 @@ NOISE_DIM=96
 LR = 0.00005
 
 x, _ = next(iter(trainloader))
-
 '''Discriminator'''
-D = discriminator(x.shape[1:3]).to(device)
+D = discriminator(x.shape[1:4]).to(device)
 
 '''Generator'''
-G = generator(NOISE_DIM, x.shape[1:3]).to(device)
+G = generator(NOISE_DIM, x.shape[1:4]).to(device)
 
 '''Optimizers'''
 D_solver = torch.optim.RMSprop(D.parameters(), lr=LR)
 G_solver = torch.optim.RMSprop(G.parameters(), lr=LR)
 
 '''run training'''
-run_vanilla_gan(D, G, D_solver, G_solver, LS_discriminator_loss, LS_generator_loss, trainloader, num_epochs=100, n_critic=5, clip_value=0.01)
+run_vanilla_gan(D, G, D_solver, G_solver, LS_discriminator_loss, LS_generator_loss, trainloader, num_epochs=200, n_critic=5, clip_value=0.01)

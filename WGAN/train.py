@@ -7,7 +7,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 from image_to_gif import image_to_gif
 
-def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader, show_every=250, batch_size=128, noise_size=96, num_epochs = 10, n_critic=5, clip_value = 0.01):
+def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader, show_every=500, batch_size=128, noise_size=96, num_epochs = 10, n_critic=5, clip_value = 0.01):
     """
     Vanilla GAN Trainer
 
@@ -34,7 +34,6 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             if len(x) != batch_size:
                 continue
 
-
             '''Real Images'''
             real_data = x.to(device) #sampled batch of data
             logits_real = D(2 * (real_data - 0.5)).to(device) #returns logit of real data.
@@ -45,7 +44,7 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             fake_images = G(g_fake_seed).detach() #Sample minibatch of m examples from data generating distribution
             logits_fake = D(fake_images) #get the logits for the fake images using the Discirminator
 
-            d_total_error = torch.mean(logits_real) - torch.mean(logits_fake) #negative Sigmoid BCE loss for the discriminator
+            d_total_error = -torch.mean(logits_real) + torch.mean(logits_fake) #negative Sigmoid BCE loss for the discriminator
 
             D_solver.zero_grad()
             d_total_error.backward()
@@ -72,15 +71,12 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             if (iter_count % show_every == 0):
 
                 print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, d_total_error.item(), g_error.item()))
-                imgs_numpy = fake_images.data.cpu().numpy()
-
-                '''filename used for saving the image'''
 
                 filelist.append(
-                    util.save_images_to_directory(imgs_numpy, directory, 'target_image_%s.png' % iter_count))
+                    util.save_images_to_directory(fake_images.view(-1, 1, 28, 28), directory, 'target_image_%s.png' % iter_count))
 
             iter_count += 1
 
     #create a gif
-    image_to_gif('./img/', filelist, duration=1)
+    image_to_gif('./img/', filelist, duration=0.5)
 
