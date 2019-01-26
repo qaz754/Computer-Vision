@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+import util
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -33,7 +35,7 @@ class generator(nn.Module):
 
         x = self.model(x)
 
-        return x
+        return x.view(-1, 1, 28, 28)
 
 class discriminator(nn.Module):
 
@@ -41,6 +43,7 @@ class discriminator(nn.Module):
         super(discriminator, self).__init__()
 
         self.discrim = nn.Sequential(
+            util.Flatten(),
             nn.Linear(int(np.prod(image_shape)), 512),
             nn.LeakyReLU(0.20),
             nn.Linear(512, 256),

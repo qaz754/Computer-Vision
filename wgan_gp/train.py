@@ -50,12 +50,6 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             d_total_error.backward()
             D_solver.step() #One step Descent into loss
 
-            for parameters in D.parameters():
-                '''
-                clip the weights to be between [-clip_value, clip_value]
-                '''
-                parameters.data.clamp_(-clip_value, clip_value)
-
             '''Train Generator Every n_critics iterations'''
             if iter_count % n_critic == 0:
 
@@ -71,15 +65,12 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             if (iter_count % show_every == 0):
 
                 print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, d_total_error.item(), g_error.item()))
-                imgs_numpy = fake_images.data.cpu().numpy()
-
-                '''filename used for saving the image'''
 
                 filelist.append(
-                    util.save_images_to_directory(imgs_numpy, directory, 'target_image_%s.png' % iter_count))
+                    util.save_images_to_directory(fake_images, directory, 'target_image_%s.png' % iter_count))
 
             iter_count += 1
 
     #create a gif
-    image_to_gif('./img/', filelist, duration=1)
+    image_to_gif('./img/', filelist, duration=0.5)
 
