@@ -92,5 +92,7 @@ Adversarial Autoencoder that combines AE and GANs. This Pytorch implementation u
 
 [Paper](https://arxiv.org/pdf/1704.00028.pdf)
 
+![](wgan_gp/movie.gif)
+
 
 
