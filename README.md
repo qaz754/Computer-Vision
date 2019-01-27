@@ -94,5 +94,9 @@ Adversarial Autoencoder that combines AE and GANs. This Pytorch implementation u
 
 ![](wgan_gp/movie.gif)
 
+## RecycleGan
+
+[Paper](https://arxiv.org/pdf/1808.05174.pdf)
+
 
 
