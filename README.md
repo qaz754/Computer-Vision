@@ -98,5 +98,24 @@ Adversarial Autoencoder that combines AE and GANs. This Pytorch implementation u
 
 [Paper](https://arxiv.org/pdf/1808.05174.pdf)
 
+## UNIT
 
+[Paper](https://arxiv.org/pdf/1703.00848.pdf)
 
+The model was trained on edgeToShoes dataset. The training takes about 6 hours per epoch, and uses a little more than 5GB of gpu memory on my 1080ti. The model was trained for 5 epochs total so the model is not great. The gif is only here to illustrate that the training does improve the model overtime. Shoes->Edge seem much easier for the model to learn than Edge->shoes. 
+
+### Training
+Edge / Shoes->Edge / Shoe / Edge->Shoe
+
+![](UNIT/train_images/input.gif)
+![](UNIT/train_images/x2_1_recon_image.gif)
+![](UNIT/train_images/target.gif)
+![](UNIT/train_images/x1_2_recon_image.gif)
+
+### Testing
+Edge / Shoes->Edge / Shoe / Edge->Shoe
+
+![](UNIT/test_images/input.gif)
+![](UNIT/test_images/x2_1_recon.gif)
+![](UNIT/test_images/target.gif)
+![](UNIT/test_images/x1_2_recon.gif)
