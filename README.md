@@ -119,3 +119,26 @@ Edge / Shoes->Edge / Shoe / Edge->Shoe
 ![](UNIT/test_images/x2_1_recon.gif)
 ![](UNIT/test_images/target.gif)
 ![](UNIT/test_images/x1_2_recon.gif)
+
+## ADaIN
+
+[Paper](https://arxiv.org/pdf/1703.06868.pdf)
+
+### Training
+
+Content / Style / Transformed Image
+
+### Testing
+
+Content / Style / Transformed Image
+
+### Different Alpha
+
+How changing alpha changes how much style to be trasnferred. 
+
+![](ADaIN/img/DiffAlpha/content_image_.gif)
+![](ADaIN/img/DiffAlpha/style_image_.gif)
+![](ADaIN/img/DiffAlpha/transformed_image_.gif)
+
+
+
