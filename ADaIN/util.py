@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from torchvision.utils import save_image
+import torchvision
 
 
 from torch.distributions import Normal
@@ -250,3 +251,12 @@ def Style_Loss(transformed, original, cal_function):
         loss[i] = nn.MSELoss()(transformed_mean, original_mean) + nn.MSELoss()(transformed_std, original_std)
 
     return loss.sum()
+
+def save_grid_images(image_tensor, directory, filename, rows=3):
+
+    grid_img = torchvision.utils.make_grid(image_tensor, nrow=rows)
+
+    filename = save_images_to_directory(grid_img, directory, filename)
+
+    return filename
+

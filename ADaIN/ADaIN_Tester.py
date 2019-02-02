@@ -60,13 +60,11 @@ class Tester():
             ADaIn_out = self.model[1].ADaIN([content_enc[-1], style_enc[-1]])
             transformed_image = self.model[2](ADaIn_out, content_enc[-1])
 
-            fpred_image_list.append(util.save_images_to_directory(transformed_image, directory, 'transformed_image_%s.png' % steps))
-            input_image_list.append(util.save_images_to_directory(content, directory, 'content_image_%s.png' % steps))
-            target_image_list.append(util.save_images_to_directory(style, directory, 'style_image_%s.png' % steps))
+            stacked_image = torch.cat((content, style, transformed_image), 0)
+
+            fpred_image_list.append(util.save_grid_images(stacked_image, directory, 'imges_%s.png' %steps))
 
         image_to_gif(directory, fpred_image_list, duration=1, gifname='transformed_image_')
-        image_to_gif(directory, target_image_list, duration=1, gifname='style_image_')
-        image_to_gif(directory, input_image_list, duration=1, gifname='content_image_')
 
 
 
