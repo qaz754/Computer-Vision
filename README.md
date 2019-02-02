@@ -128,9 +128,15 @@ Edge / Shoes->Edge / Shoe / Edge->Shoe
 
 Content / Style / Transformed Image
 
+![](ADaIN/img/Training/content_image_.gif)
+![](ADaIN/img/Training/style_image_.gif)
+![](ADaIN/img/Training/transformed_image_.gif)
+
 ### Testing
 
 Content / Style / Transformed Image
+
+![](ADaIN/Validation/transformed_image_.gif)
 
 ### Different Alpha
 
