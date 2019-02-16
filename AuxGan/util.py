@@ -176,7 +176,7 @@ def show_images(images, filename, iterations, title=None):
 
         '''global title'''
         if title == None:
-            title = 'LS-CGANs After %s iterations'
+            title = 'AuxGANs After %s iterations'
         plt.suptitle(title %iterations)
         plt.imshow(img.reshape([sqrtimg, sqrtimg]))
         plt.savefig(filename)

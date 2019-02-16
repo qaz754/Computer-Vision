@@ -83,7 +83,6 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
             D_loss.backward()
             D_solver.step() #One step Descent into loss
 
-
             if (iter_count % show_every == 0):
                 print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, D_loss.item(), G_loss.item()))
                 imgs_numpy = fake_images.data.cpu().numpy()

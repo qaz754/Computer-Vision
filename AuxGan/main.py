@@ -73,7 +73,7 @@ for i in range(0, 10):
 
     filename = os.path.join('%s' % directory, '%s' % filename)
 
-    show_images(imgs_numpy[0:16], filename, i, title='LS-CGANs With Label %s')
+    show_images(imgs_numpy[0:16], filename, i, title='AuxGANs With Label %s')
     plt.show()
     print()
 
