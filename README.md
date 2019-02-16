@@ -54,6 +54,15 @@ Same cost function as Vanilla GANs but with Deep convolutional layers. Produces 
 Same architecture as DCGANs but with LeastSquares loss 
 
 ![](LS_DCGANs/ls-dcgan.gif)
+## Auxillary Gan
+
+[AuxGAN](https://arxiv.org/abs/1610.09585)
+
+Training process 
+![](AuxGan/gif/movie.gif)
+
+Generating images with specific labels
+![](AuxGan/gif/movie2.gif)
 
 ## CGAN
 
