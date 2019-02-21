@@ -166,7 +166,7 @@ def generator_loss(logits_fake):
 
     labels = torch.ones(logits_fake.size()).to(device)
 
-    loss = bce_loss(logits_fake, labels)
+    loss = nn.MSELoss()(logits_fake, labels)
 
     return loss
 
