@@ -158,6 +158,12 @@ How changing alpha changes how much style to be trasnferred.
 
 ### StarGAN
 
+## Training progress
+
+Turning MNIST numbers to an 8.
+
+![](StarGAN_MNIST/img/input_movie.gif) ![](StarGAN_MNIST/img/movie.gif)
+
 [paper](https://arxiv.org/pdf/1711.09020.pdf)
 
 
