@@ -156,4 +156,8 @@ How changing alpha changes how much style to be trasnferred.
 ![](ADaIN/img/DiffAlpha/transformed_image_.gif)
 
 
+### StarGAN
+
+[paper](https://arxiv.org/pdf/1711.09020.pdf)
+
 
