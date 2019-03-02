@@ -7,10 +7,28 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Tester():
 
-    def __init__(self, dataloader, model):
+    def __init__(self, dataloader, model, checkpoint_path = './model/checkpoint_0.pth'):
 
         self.dataloader = dataloader
         self.model = model
+
+        self.checkpoint_path = checkpoint_path
+
+
+    def load_progress(self,):
+
+        # TODO get rid of hardcoding and come up with an automated way.
+
+        checkpoint = torch.load(self.checkpoint_path)
+
+        self.model[0].load_state_dict(checkpoint['model0_state_dict'])
+        self.model[1].load_state_dict(checkpoint['model1_state_dict'])
+
+        epoch = checkpoint['epoch']
+        loss = checkpoint['loss']
+
+        print("Training Loss From Last Session")
+        return epoch, loss
 
     def test(self):
         steps = 0
@@ -25,15 +43,18 @@ class Tester():
 
         directory = './img/test/'
 
+        self.load_progress()
+
         for input_image, target_image in iter(self.dataloader):
 
             steps += 1
 
             input_image = input_image.to(device)
             target_image = target_image.to(device)
+            self.model[0].eval()
+            self.model[1].eval()
 
             '''Input(F) --> target(G)'''
-
             g_pred = self.model[0](input_image)
 
             '''Input(G) --> target(F)'''

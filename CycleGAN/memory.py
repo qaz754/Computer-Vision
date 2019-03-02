@@ -29,7 +29,6 @@ class ReplayBuffer:
         """Randomly sample a batch of experiences from memory."""
 
         experiences = random.sample(self.memory, k=len(self.memory))
-
         image = torch.cat([e.image for e in experiences if e is not None])
         #image = [e.image for e in experiences if e is not None]
 
