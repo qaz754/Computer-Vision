@@ -1,63 +1,68 @@
 
 import torch
-import torch.nn as nn
 import numpy as np
+import torch.nn as nn
 
-import util
-
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+from util import Flatten
 
 
+class Linear(nn.Module):
+    def __init__(self, dim_in, dim_out, opts, Activation='relu', Norm=False):
+        super(Linear, self).__init__()
 
-class generator(nn.Module):
+        steps = [nn.Linear(dim_in, dim_out)]
 
-    def __init__(self, noise_shape, image_shape):
-        super(generator, self).__init__()
+        if Norm:
+            steps.append(nn.BatchNorm1d(dim_out))
 
-        def block(in_shape, out_shape, norm=True):
-            model = [nn.Linear(in_shape, out_shape)]
-            if norm:
-                model.append(nn.BatchNorm1d(out_shape))
-            model.append(nn.LeakyReLU(0.2))
-            return model
+        if Activation == 'relu':
+            steps.append(nn.ReLU())
+        elif Activation == 'lrelu':
+            steps.append(nn.LeakyReLU(opts.lrelu_val))
 
-        self.model = nn.Sequential(
-            *block(noise_shape, 128, False),
-            *block(128, 256),
-            *block(256, 512),
-            *block(512, 1024),
-            nn.Linear(1024, int(np.prod(image_shape))),
-            nn.Tanh()
-        )
+        self.model = nn.Sequential(*steps)
 
     def forward(self, x):
 
-        x = self.model(x)
-
-        return x.view(-1, 1, 28, 28)
+        return self.model(x)
 
 class discriminator(nn.Module):
-
-    def __init__(self, image_shape):
+    def __init__(self, opts):
         super(discriminator, self).__init__()
 
-        self.discrim = nn.Sequential(
-            util.Flatten(),
-            nn.Linear(int(np.prod(image_shape)), 512),
-            nn.LeakyReLU(0.20),
-            nn.Linear(512, 256),
-            nn.LeakyReLU(0.20),
-            nn.Linear(256, 128),
-            nn.LeakyReLU(0.20),
-            nn.Linear(128, 1)
-        )
+        steps = [Linear(opts.D_input_size, opts.D_hidden[0], opts, Activation=opts.D_activation)]
+
+        if len(opts.D_hidden) > 1:
+            for i in range(len(opts.D_hidden) - 1):
+                steps.append(Linear(opts.D_hidden[i], opts.D_hidden[i + 1], opts, Activation=opts.D_activation))
+
+        steps.append(Linear(opts.D_hidden[-1], opts.D_output_size, opts, Activation=''))
+
+        self.model = nn.Sequential(*steps)
 
     def forward(self, x):
+        return self.model(x)
 
-        x = self.discrim(x)
+class generator(nn.Module):
+    def __init__(self, opts):
+        super(generator, self).__init__()
 
-        return x
+        steps = [Linear(opts.noise_dim, opts.G_hidden[0], opts, Activation=opts.G_activation)]
 
+        if len(opts.G_hidden) > 1:
+            for i in range(len(opts.G_hidden) - 1):
+                steps.append(Linear(opts.G_hidden[i], opts.G_hidden[i + 1], opts, Activation=opts.G_activation))
 
+        steps.append(Linear(opts.G_hidden[-1], opts.G_output_size, opts, Activation=''))
 
+        if opts.G_out_activation == 'tanh':
+            final_activation = nn.Tanh()
+        elif opts.G_out_activation == 'sigm':
+            final_activation = nn.Sigmoid()
+
+        steps.append(final_activation)
+
+        self.model = nn.Sequential(*steps)
+
+    def forward(self, x):
+        return self.model(x)

@@ -7,7 +7,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 from image_to_gif import image_to_gif
 
-def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss, loader, show_every=250, batch_size=128, noise_size=96, num_epochs = 10, n_critic=5, clip_value = 0.01, gp_lambda=10):
+def run_vanilla_gan(opts, D, G, D_solver, G_solver, loader):
     """
     Vanilla GAN Trainer
 
@@ -29,45 +29,45 @@ def run_vanilla_gan(D, G, D_solver, G_solver, discriminator_loss, generator_loss
     filelist = []
     directory = './img/'
 
-    for epoch in range(num_epochs):
+    for epoch in range(opts.epoch):
         for x, _ in loader:
-            if len(x) != batch_size:
-                continue
-
 
             '''Real Images'''
-            real_data = x.to(device) #sampled batch of data
-            logits_real = D(2 * (real_data - 0.5)).to(device) #returns logit of real data.
+            real_data = x.view((-1, 784)).to(device)
+            logits_real = D(real_data).to(device)
 
             '''Train Discriminator'''
-            g_fake_seed = util.sample_noise(batch_size, noise_size).to(device) #Sample minibatch of m noise samples
-            fake_images = G(g_fake_seed).detach() #Sample minibatch of m examples from data generating distribution
-            logits_fake = D(fake_images) #get the logits for the fake images using the Discirminator
+            g_fake_seed = util.sample_noise(x.shape[0], opts.noise_dim).to(device)
+            fake_images = G(g_fake_seed).detach()
+            logits_fake = D(fake_images)
 
-            d_total_error = -torch.mean(logits_real) + torch.mean(logits_fake) + util.calc_gradient_penalty(D, 2 * (real_data - 0.5), fake_images) * gp_lambda
+            d_total_error = -torch.mean(logits_real) + torch.mean(logits_fake) + util.calc_gradient_penalty(D, real_data, fake_images) * opts.gp_lambda
 
             D_solver.zero_grad()
             d_total_error.backward()
-            D_solver.step() #One step Descent into loss
+            D_solver.step()
 
             '''Train Generator Every n_critics iterations'''
-            if iter_count % n_critic == 0:
+            if iter_count % opts.n_critic == 0:
 
-                g_fake_seed = util.sample_noise(batch_size, noise_size).to(device) #Sample minibatch of m noise samples from noise prior
-                fake_images = G(g_fake_seed) #Sample minibatch of m examples from data generating distribution
+                g_fake_seed = util.sample_noise(x.shape[0], opts.noise_dim).to(device)
+                fake_images = G(g_fake_seed)
 
-                gen_logits_fake = D(fake_images) #get the negative sigmoid BCE loss for the discriminator
-                g_error = -torch.mean(gen_logits_fake) #get the loss for the generator
+                gen_logits_fake = D(fake_images)
+                g_error = -torch.mean(gen_logits_fake)
+
                 G_solver.zero_grad()
                 g_error.backward()
-                G_solver.step() #One step Descent into the loss
+                G_solver.step()
 
-            if (iter_count % show_every == 0):
+            if iter_count % opts.print_every == 0:
+                print('Epoch: {}, Iter: {}, D: {:.4}, G:{:.4}'.format(epoch, iter_count, d_total_error.item(),
+                                                                      g_error.item()))
 
-                print('Iter: {}, D: {:.4}, G:{:.4}'.format(iter_count, d_total_error.item(), g_error.item()))
+            if iter_count % opts.show_every == 0:
 
                 filelist.append(
-                    util.save_images_to_directory(fake_images, directory, 'target_image_%s.png' % iter_count))
+                    util.save_images_to_directory(fake_images.view((x.shape)), directory, 'target_image_%s.png' % iter_count))
 
             iter_count += 1
 
