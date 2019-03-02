@@ -8,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from textwrap import wrap
+import os
+from torchvision.utils import save_image
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -18,7 +19,6 @@ def sample_noise(batch_size, dim):
     :param batch_size (int): size of the batch
     :param dim (int): size of the vector of dimensions
     :return: tensor of a random values between (L, U)
-
     Used to generate images in GANs
     """
 
@@ -34,7 +34,6 @@ class Flatten(nn.Module):
     """
     Given a tensor of Batch * Color * Height * Width, flatten it and make it 1D.
     Used for Linear GANs
-
     Usable in nn.Sequential
     """
     def forward(self, x):
@@ -47,7 +46,6 @@ class Unflatten(nn.Module):
     """
     An Unflatten module receives an input of shape (Batch, C*H*W) and reshapes it
     to produce an output of shape (Batch, C, H, W).
-
     C = Color Channels
     H = Heigh
     W = Width
@@ -68,9 +66,7 @@ class Unflatten(nn.Module):
 def bce_loss(input, target):
     """
     Numerically stable version of the binary cross-entropy loss function.
-
     As per https://github.com/pytorch/pytorch/issues/751
-
     :param input: PyTorch Tensor of shape (N, )
     :param target: PyTorch Tensor of shape (N, ). An indicator variable that is 0 or 1
     :return:
@@ -85,7 +81,6 @@ def bce_loss(input, target):
 def discriminator_loss(logits_real, logits_fake):
     """
     Computes the discriminator loss for Vanilla GANs
-
     :param logits_real: PyTorch Tensor of shape(N, ). Gives scores for the real data
     :param logits_fake: PyTorch Tensor of shape(N, ). Gives scores for the fake data
     :return: PyTorch Tensor containing the loss for the discriminator
@@ -93,8 +88,8 @@ def discriminator_loss(logits_real, logits_fake):
 
     labels = torch.ones(logits_real.size()).to(device) #label used to indicate whether it's real or not
 
-    loss_real = bce_loss(logits_real, labels) #real data
-    loss_fake = bce_loss(logits_fake, 1 - labels) #fake data
+    loss_real = nn.MSELoss()(logits_real, labels) #real data
+    loss_fake = nn.MSELoss()(logits_fake, 1 - labels) #fake data
 
     loss = loss_real + loss_fake
 
@@ -103,48 +98,13 @@ def discriminator_loss(logits_real, logits_fake):
 def generator_loss(logits_fake):
     """
     Computes the generator loss
-
     :param logits_fake: PyTorch Tensor of shape (N, ). Gives scores for the real data
     :return: PyTorch tensor containing the loss for the generator
     """
 
     labels = torch.ones(logits_fake.size()).to(device)
 
-    loss = bce_loss(logits_fake, labels)
-
-    return loss.to(device)
-
-
-def LS_discriminator_loss(logits_real, logits_fake):
-    """
-    Computes the discriminator loss for Vanilla GANs
-
-    :param logits_real: PyTorch Tensor of shape(N, ). Gives scores for the real data
-    :param logits_fake: PyTorch Tensor of shape(N, ). Gives scores for the fake data
-    :return: PyTorch Tensor containing the loss for the discriminator
-    """
-
-    labels = torch.ones(logits_real.size()).to(device) #label used to indicate whether it's real or not
-
-    #A, B, C values based on https://arxiv.org/pdf/1611.04076v3.pdf Page 8
-    loss_real = 1/2 * ((logits_real - labels) ** 2).mean() #real data
-    loss_fake = 1/2 * ((logits_fake) ** 2).mean() #fake data
-
-    loss = loss_real + loss_fake
-
-    return loss.to(device)
-
-def LS_generator_loss(logits_fake):
-    """
-    Computes the generator loss
-
-    :param logits_fake: PyTorch Tensor of shape (N, ). Gives scores for the real data
-    :return: PyTorch tensor containing the loss for the generator
-    """
-
-    labels = torch.ones(logits_fake.size()).to(device)
-
-    loss = 1/2 * ((logits_fake - labels) ** 2).mean()
+    loss = nn.MSELoss()(logits_fake, labels)
 
     return loss.to(device)
 
@@ -175,8 +135,16 @@ def show_images(images, filename, iterations):
         ax.set_aspect('equal')
 
         '''global title'''
-        plt.suptitle('LSGANs After %s iterations' %iterations)
+        plt.suptitle('Vanilla GANs After %s iterations' %iterations)
         plt.imshow(img.reshape([sqrtimg, sqrtimg]))
         plt.savefig(filename)
 
+def save_images_to_directory(image_tensor, directory, filename):
 
+    directory = directory
+    image = torch.from_numpy(image_tensor).data
+
+    save_name = os.path.join('%s' % directory, '%s' % filename)
+    save_image(image, save_name)
+
+    return filename

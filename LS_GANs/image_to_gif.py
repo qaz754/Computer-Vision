@@ -1,7 +1,6 @@
+import imageio
 import os
 import fnmatch
-
-""""""
 
 def get_filenames(directory, filenames):
 
@@ -13,16 +12,10 @@ def get_filenames(directory, filenames):
 
     return filelist
 
-#example
-#d = get_filenames('./img', 'image*.png')
-
-import imageio
-
 def image_to_gif(directory, filenames, duration=0.5, destination=None, gifname=None):
     """
     Given a directory, filename and duration, this function creates a gif using the filename in the directory given
     with a puase of duration seconds between images
-
     :param directory (str): directory that holds images
     :param filename (list of str)): a list that holds str of names of filenames that will be turned into a gif
     :param duration (float): a pause between images. defaulted to 0.5 second pause
