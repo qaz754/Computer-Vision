@@ -1,4 +1,4 @@
 
 ## Vanilla Gans
 
-![gif](img/original.gif)
+![gif](img/movie.gif)
