@@ -8,7 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from textwrap import wrap
+
+import os
+from torchvision.utils import save_image
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -248,3 +250,20 @@ def randn_z_dimension(output_shape):
     output = torch.randn(output_shape)
 
     return output
+
+def expand_spatially(input, image_shape):
+
+    label = input.view((input.shape[0], input.shape[1], 1, 1))
+    label = label.repeat(1, 1, image_shape, image_shape)
+
+    return label
+
+
+def save_images_to_directory(image_tensor, directory, filename):
+    directory = directory
+    image = image_tensor.cpu().data
+
+    save_name = os.path.join('%s' % directory, '%s' % filename)
+    save_image(image, save_name)
+
+    return filename

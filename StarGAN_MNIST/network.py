@@ -1,45 +1,16 @@
 
+
+#input is 224
+
 import torch
 import torch.nn as nn
 
-from util import Flatten
-
-class discriminator(nn.Module):
-
-    def __init__(self, in_channel, out_channel):
-        super(discriminator, self).__init__()
-
-        self.out_channel = out_channel
-
-        self.model = nn.Sequential(
-            nn.Conv2d(in_channel, 32, 4, 2, 1),
-            nn.LeakyReLU(0.2, True),
-            nn.Conv2d(32, 64, 4, 2, 1),
-            nn.InstanceNorm2d(64),
-            nn.LeakyReLU(0.2, True),
-            nn.Conv2d(64, 128, 4, 2, 1),
-            nn.InstanceNorm2d(128),
-            nn.LeakyReLU(0.2, True),
-        )
-        self.src = nn.Sequential(
-            nn.Conv2d(128, 1, 4, 1, 1)
-        )
-        self.cls = nn.Sequential(
-            nn.Conv2d(128, out_channel, 5, 1, 1)
-        )
-
-    def forward(self, x):
-        x = self.model(x)
-        return self.src(x), self.cls(x).view(-1, self.out_channel)
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def if_tensor(tensor):
 
     if isinstance(tensor, torch.Tensor):
         return True
-
-#TODO Resnet block
-#TODO Convnet block
 
 class ResBlock(nn.Module):
 
@@ -63,45 +34,39 @@ class ResBlock(nn.Module):
         return x
 
 class ResNet(nn.Module):
-    def __init__(self, channel_in, channel_out, up_channel):
+    def __init__(self, opts):
         super(ResNet, self).__init__()
 
-        model = nn.Sequential(
-                    nn.ReflectionPad2d(3),
-                     nn.Conv2d(channel_in, up_channel, kernel_size=7, bias=True),
-                     nn.InstanceNorm2d(up_channel),
-                     nn.ReLU(inplace=True))
+        in_ch = opts.channel_up
 
-        downsample0 = conv_down(up_channel)
-        downsample1 = conv_down(downsample0.channel_output)
+        steps = []
 
-        resblock0 = ResBlock(downsample1.channel_output)
-        resblock1 = ResBlock(downsample1.channel_output)
-        resblock2 = ResBlock(downsample1.channel_output)
-        resblock3 = ResBlock(downsample1.channel_output)
-        resblock4 = ResBlock(downsample1.channel_output)
-        resblock5 = ResBlock(downsample1.channel_output)
+        steps += [nn.ReflectionPad2d(3),
+                 nn.Conv2d(opts.channel_in + opts.num_classes, in_ch, kernel_size=7, bias=opts.use_bias),
+                 nn.InstanceNorm2d(in_ch),
+                 nn.ReLU(inplace=True)]
 
-        upsample0 = conv_up(downsample1.channel_output)
-        upsample1 = conv_up(upsample0.channel_output)
+        for i in range(opts.n_conv_down):
+            steps.append(conv_down(in_ch))
+            in_ch *= 2
 
+        for i in range(opts.n_resblock):
+            steps.append(ResBlock(in_ch))
 
-        output = nn.Sequential(
-            nn.ReflectionPad2d(3),
-            nn.Conv2d(upsample1.channel_output, channel_out, kernel_size=7),
-            nn.Tanh()
-        )
+        for i in range(opts.n_conv_up):
+            steps.append(conv_up(in_ch))
+            in_ch = in_ch // 2
 
+        steps += [nn.ReflectionPad2d(3), nn.Conv2d(in_ch, opts.channel_out, kernel_size=7)]
 
-        down = nn.Sequential(downsample0, downsample1)
+        if opts.G_out_activation == 'tanh':
+            final_activation = nn.Tanh()
+        elif opts.G_out_activation == 'sigm':
+            final_activation = nn.Sigmoid()
 
-        res = nn.Sequential(resblock0, resblock1, resblock2, resblock3, resblock4, resblock5)
+        steps += [final_activation]
 
-        up = nn.Sequential(upsample0, upsample1)
-
-        output = nn.Sequential(output)
-
-        self.model = nn.Sequential(model, down, res, up, output)
+        self.model = nn.Sequential(*steps)
 
     def forward(self, x):
 
@@ -109,7 +74,7 @@ class ResNet(nn.Module):
 
 class conv_down(nn.Module):
 
-    def __init__(self, channel_input, channel_output = 16, kernel=3, stride=1, padding=0, Norm=True, Dropout=0.0):
+    def __init__(self, channel_input, kernel=3, stride=1, padding=0, Norm=True, Dropout=0.0):
         super(conv_down, self).__init__()
 
         self.channel_output = channel_input * 2
@@ -132,7 +97,7 @@ class conv_down(nn.Module):
 
 class conv_up(nn.Module):
 
-    def __init__(self, channel_input, channel_output = None, kernel=3, stride=1, padding=0, Norm=True, Dropout=0):
+    def __init__(self, channel_input, kernel=3, stride=1, padding=0, Norm=True, Dropout=0):
         super(conv_up, self).__init__()
 
 
@@ -155,3 +120,31 @@ class conv_up(nn.Module):
             x = torch.cat((x, skip_input), 1)
 
         return self.model(x)
+
+class discriminator(nn.Module):
+
+    def __init__(self, opts):
+        super(discriminator, self).__init__()
+
+        self.opts = opts
+        steps = []
+        in_channel = opts.D_input_channel
+        channel_up = opts.D_channel_up
+        for i in range(opts.n_discrim_down):
+            steps += [nn.Conv2d(in_channel, channel_up, 4, 2, 1), nn.LeakyReLU(opts.lrelu_val, True)]
+            in_channel = channel_up
+            channel_up *= 2
+
+        src = [nn.Conv2d(in_channel, 1, 4, 1, 1)]
+        cls = [nn.Conv2d(in_channel, opts.num_classes, 5, 1, 1)]
+
+        self.model = nn.Sequential(*steps)
+        self.src = nn.Sequential(*src)
+        self.cls = nn.Sequential(*cls)
+
+    def forward(self, x):
+
+        x = self.model(x)
+
+        return self.src(x), self.cls(x).view((-1, self.opts.num_classes))
+
