@@ -8,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from textwrap import wrap
+import os
+from torchvision.utils import save_image
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -226,3 +227,12 @@ def generate_fake_label(batch_size=128, n_classes=10, specific=None):
     fake_labels = one_hot_encoder(fake_labels, n_classes)
 
     return fake_labels
+
+def save_images_to_directory(image_tensor, directory, filename):
+    directory = directory
+    image = image_tensor.cpu().data
+
+    save_name = os.path.join('%s' % directory, '%s' % filename)
+    save_image(image, save_name)
+
+    return filename
