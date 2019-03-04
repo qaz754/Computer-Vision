@@ -6,47 +6,62 @@ import random
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-import torch
-
-
 from PIL import Image
 from image_folder import get_images
 
 import torchvision.transforms.functional as TVF
 
+from sklearn import preprocessing
+
 attributes = [
-    'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair', 'Bangs', 'Straight_Hair', 'Wavy_Hair', 'Young', 'Male'
+    'Wearing_Lipstick'
 ]
 
 hair_color_attributes = [
-    'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair',
+    'Black_Hair', 'Blond_Hair', 'Brown_Hair'
 ]
 
-hair_attributes = [
-    'Straight_Hair', 'Wavy_Hair'
+lipstick_attribute = [
+    'Wearing_Lipstick'
 ]
 
 bang = [
     'Bangs'
 ]
 
-young = [
-    'Young'
+facial = [
+    '5_o_Clock_Shadow'
 ]
 
-gender = [
-    'Male'
-]
+target_attributes = [lipstick_attribute[:]]
+target_attributes1 = [lipstick_attribute[:]]
 
-target_attributes = [hair_color_attributes, hair_attributes, bang, young, gender]
+#target_attributes = [facial[:], hair_color_attributes[:], bang[:], lipstick_attribute[:]]
+#target_attributes1 = [facial[:], hair_color_attributes[:], bang[:], lipstick_attribute[:]]
 
-class Pix2Pix_AB_Dataloader(Dataset):
+
+def attribute_combinations(attributes=target_attributes1):
+
+    binary_attributes = []
+    for attr in attributes:
+        lb = preprocessing.LabelBinarizer()
+        if len(attr) == 1:
+            '''in case the list only has 1 value, like bang, append an empty str to indicate "off" '''
+            '''otherwise the binarizer only outputs 1 value "1"'''
+            psudo_attribute = ['']
+            attr += psudo_attribute
+        binary_attributes.append(lb.fit_transform(attr))
+
+    return binary_attributes
+
+
+class CelebA_DataLoader(Dataset):
     """
     Dataloader class used to load in data in an image folder.
     Made it so that it performs a fixed set of transformations to a pair of images in different folders
     """
 
-    def __init__(self, img_folder, attribute_file, target_attributes=target_attributes,  transform=None, size =256, randomcrop = 224, hflip=0.5, vflip=0.5, train=True):
+    def __init__(self, img_folder, attribute_file, target_attributes=attributes,  target_attributes_list=target_attributes, transform=None, size =256, randomcrop = 224, hflip=0.5, vflip=0.5, train=True):
         '''
         :param img_folder:
         :param transform:
@@ -59,8 +74,7 @@ class Pix2Pix_AB_Dataloader(Dataset):
         self.attributes = {}
 
         self.target_attributes=target_attributes
-
-        self.load_attribute()
+        self.target_attributes_list = target_attributes_list
 
         self.size = size #for resizing
         self.randomCrop = randomcrop #randomcrop
@@ -82,14 +96,22 @@ class Pix2Pix_AB_Dataloader(Dataset):
 
         lines = [line.rstrip() for line in open(self.attribute_file, 'r')]
         self.all_attr_names = lines[1].split()
+        self.idx = []
 
-        for i in range(2 , len(lines)):
+        #get the index of target attributes
+        for attr in self.target_attributes:
+            self.idx.append(self.all_attr_names.index(attr))
+
+        self.target_attr_names = [self.all_attr_names[idx] for idx in self.idx]
+
+        for i in range(2,len(lines)):
             line_split = lines[i].split()
-            self.attributes[line_split[0]] = line_split[1:]
+            attributes = line_split[1:-1].copy()
+            self.attributes[line_split[0]] = [attributes[idx] for idx in self.idx]
 
     def attribute_chooser(self, attribute_list):
 
-        binary = np.ones(len(attribute_list), dtype=int) * -1
+        binary = np.zeros(len(attribute_list), dtype=float)
         if len(attribute_list) > 1:
             choice = np.random.randint(0, len(attribute_list))
         else:
@@ -107,23 +129,21 @@ class Pix2Pix_AB_Dataloader(Dataset):
 
     def get_transformed_attributes(self, image_name):
 
-        target_attributes = self.attributes[image_name]
+        target_attributes = self.attributes[image_name][:]
 
-        for target_set in self.target_attributes:
+        for target_set in self.target_attributes_list:
             chosen_attribute, binary = self.attribute_chooser(target_set)
-
             for idx, attr in enumerate(target_set):
-                index = self.all_attr_names.index(attr)
+                index = self.target_attributes.index(attr)
                 target_attributes[index] = binary[idx]
 
         return target_attributes
 
     def list_to_tensor(self, input):
-        input = list(map(int, input))
+        input = list(map(float, input))
         input = np.asarray(input)
 
         return input
-
 
     def __len__(self):
 
@@ -142,7 +162,6 @@ class Pix2Pix_AB_Dataloader(Dataset):
         '''
 
         resize = transforms.Resize(size=(self.size, self.size))
-
         left_image = resize(left_image)
 
         '''
@@ -157,7 +176,10 @@ class Pix2Pix_AB_Dataloader(Dataset):
             if random.random() >= self.hflip:
                 left_image = TVF.hflip(left_image)
 
-        left_image = np.array(left_image) / 255.0
+        left_image = self.transforms(left_image)
 
+        orig_label = (self.list_to_tensor(orig_attributes) + 1.0) / 2.0
+        target_label = self.list_to_tensor(transformed_attributes)
 
-        return left_image, self.list_to_tensor(orig_attributes), self.list_to_tensor(transformed_attributes)
+        return left_image, orig_label, target_label
+
