@@ -277,7 +277,6 @@ def calc_gradient_penalty(netD, real_data, fake_data):
     alpha = torch.Tensor(np.random.random((real_data.size(0), 1, 1, 1))).to(device)
 
     interpolates = alpha * real_data + ((1 - alpha) * fake_data).to(device)
-
     interpolates = autograd.Variable(interpolates, requires_grad=True)
 
     disc_interpolates, _ = netD(interpolates)
@@ -286,8 +285,10 @@ def calc_gradient_penalty(netD, real_data, fake_data):
                               grad_outputs=torch.ones(disc_interpolates.size()).to(device),
                               create_graph=True, retain_graph=True, only_inputs=True)[0]
 
-    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return gradient_penalty
+    gradient_penalty = gradients.view(gradients.size(0), -1)
+    gradient_penalty = torch.sqrt(torch.sum(gradient_penalty ** 2, dim=1))
+
+    return torch.mean((gradient_penalty - 1) ** 2)
 
 
 def plotter(env_name, num_episodes, rewards_list, ylim):
@@ -327,25 +328,35 @@ def linear_LR(epoch, opts):
     if epoch < opts.const_epoch:
         lr = opts.lr
     else:
-        lr = np.linspace(opts.lr, 0, (opts.adaptive_epoch + 1))[epoch - opts.adaptive_epoch]
+        lr = np.linspace(opts.lr, 0, (opts.adaptive_epoch + 1))[epoch - opts.const_epoch]
 
     return lr
 
-def stargan_side_by_side_images(opts, generator, original_image, original_label, attribute=data_loader.attribute_combinations()):
+def stargan_side_by_side_images(opts, generator, original_image, original_label=None, attribute=data_loader.attribute_combinations()):
 
     col_l_lim = 0
+    label_given = True
 
-    image = original_image.clone()
-    for sub_attribute in attribute:
-        for j in range(len(sub_attribute)):
-            right_lim = len(sub_attribute[j])
-            one_hot_label = sub_attribute[j]  # one_hot_encoder := binary attributes in sub_attributes
-            new_label = original_label.clone()
-            new_label[:, col_l_lim: col_l_lim + len(sub_attribute[j])] = torch.from_numpy(one_hot_label).float().to(device)  # change the label that only correspond to sub-attribute being changed.
-            new_label_ = expand_spatially(new_label, opts.image_shape).float().to(device)
-            fake_image = generator(torch.cat([original_image, new_label_], 1)).detach()
-            image = torch.cat([image, fake_image], -1)  # column wise concat
+    if original_label == None:
+        label_given = False
+        original_label = torch.zeros(opts.num_classes).to(device)
 
-        col_l_lim += right_lim
+    with torch.no_grad():
+        image = original_image.clone()
+        for sub_attribute in attribute:
+            for j in range(len(sub_attribute)):
+                right_lim = len(sub_attribute[j])
+                one_hot_label = sub_attribute[j]  # one_hot_encoder := binary attributes in sub_attributes
+                new_label = original_label.clone()
+                if label_given:
+                    new_label[:, col_l_lim: col_l_lim + len(sub_attribute[j])] = torch.from_numpy(one_hot_label).float().to(device)  # change the label that only correspond to sub-attribute being changed.
+                else:
+                    new_label[col_l_lim: col_l_lim + len(sub_attribute[j])] = torch.from_numpy(one_hot_label).float().to(device)
+                    new_label.unsqueeze_(0)
+                new_label_ = new_label.float().to(device)
+                fake_image = generator(original_image, new_label_).detach()
+                image = torch.cat([image, fake_image], -1)  # column wise concat
+
+            col_l_lim += right_lim
 
     return image

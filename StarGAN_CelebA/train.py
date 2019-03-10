@@ -22,7 +22,7 @@ class GAN_Trainer():
         self.D_solver = D_solver
         self.G_solver = G_solver
         self.loader = loader
-        self.checkpoint_path = './model/checkpoint_0.pth'
+        self.checkpoint_path = './model/checkpoint_const1.pth'
 
     def save_progress(self, epoch, loss):
 
@@ -84,13 +84,13 @@ class GAN_Trainer():
         filelist = []
         input_list = []
 
-        epoch = 0
+        last_epoch = 0
         if self.opts.resume:
-            epoch, loss = self.load_progress()
+            last_epoch, loss = self.load_progress()
 
         directory = './img/'
 
-        for epoch in range(self.opts.epoch - epoch):
+        for epoch in range(self.opts.epoch- last_epoch):
 
             '''Adaptive LR Change'''
             for param_group in self.D_solver.param_groups:
@@ -101,6 +101,11 @@ class GAN_Trainer():
                 param_group['lr'] = util.linear_LR(epoch, self.opts)
                 print('epoch: {}, G_LR: {:.4}'.format(epoch, param_group['lr']))
 
+            if self.opts.save_progress:
+                '''Save the progress before start adjusting the LR'''
+                if epoch == self.opts.const_epoch:
+                    self.save_progress(self.opts.const_epoch, np.mean(last_100_loss))
+
             for image, label, target_label in self.loader:
 
                 '''Real Images'''
@@ -108,14 +113,11 @@ class GAN_Trainer():
 
                 '''one hot encode the real label'''
 
-                label_e = util.expand_spatially(label, self.opts.image_shape).float().to(device)
-                target_domain_e = util.expand_spatially(target_label, self.opts.image_shape).float().to(device)
-
                 label = label.float().to(device)
                 target_label = target_label.float().to(device)
                 '''Train Discriminator'''
                 '''Get the logits'''
-                fake_images = self.G(torch.cat((image, target_domain_e), dim=1))
+                fake_images = self.G(image, target_label)
 
                 fake_logits_src, _ = self.D(fake_images.detach())
                 real_logits_src, real_logits_cls = self.D(image)
@@ -132,9 +134,9 @@ class GAN_Trainer():
                 iter_count += 1
                 if iter_count % self.opts.n_critic == 0:
 
-                    fake_image = self.G(torch.cat((image, target_domain_e), dim=1))
+                    fake_image = self.G(image, target_label)
                     fake_logits_src, fake_logits_cls = self.D(fake_image)
-                    reconstruction = self.G(torch.cat((fake_image, label_e), dim=1))
+                    reconstruction = self.G(fake_image, label)
 
                     '''Reconstruction'''
                     G_cls_loss = self.opts.cls_lambda * F.binary_cross_entropy_with_logits(fake_logits_cls, target_label, reduction='sum') / fake_logits_cls.size(0)
@@ -160,7 +162,15 @@ class GAN_Trainer():
 
                 if self.opts.save_progress:
                     if iter_count % self.opts.save_every == 0:
-                        self.save_progress(iter_count, np.mean(last_100_loss))
+                        self.save_progress(epoch, np.mean(last_100_loss))
+
+        if self.opts.save_progress:
+            '''Save the progress before start adjusting the LR'''
+            self.save_progress(-1, np.mean(last_100_loss))
+
         #create a gif
         image_to_gif('./img/', filelist, duration=1, gifname='transformed')
+
+
+
 

@@ -55,7 +55,7 @@ class ResNet(nn.Module):
             steps.append(conv_up(in_ch))
             in_ch = in_ch // 2
 
-        steps += [nn.Conv2d(in_ch, opts.channel_out, 7, 1, 3)]
+        steps += [nn.Conv2d(in_ch, opts.channel_out, 7, 1, 3, bias=False)]
 
         if opts.G_out_activation == 'tanh':
             final_activation = nn.Tanh()
@@ -66,7 +66,11 @@ class ResNet(nn.Module):
 
         self.model = nn.Sequential(*steps)
 
-    def forward(self, x):
+    def forward(self, x, c):
+
+        c = c.view(c.size(0), c.size(1), 1, 1)
+        c = c.repeat(1, 1, x.size(2), x.size(3))
+        x = torch.cat([x, c], dim=1)
 
         return self.model(x)
 
@@ -135,7 +139,7 @@ class discriminator(nn.Module):
 
         kernel_size = int(opts.image_shape / (2 ** opts.n_discrim_down))
 
-        src = [nn.Conv2d(in_channel, 1, 4, 1, 1, bias=False)]
+        src = [nn.Conv2d(in_channel, 1, 3, 1, 1, bias=False)]
         cls = [nn.Conv2d(in_channel, opts.num_classes, kernel_size, bias=False)]
 
         self.model = nn.Sequential(*steps)

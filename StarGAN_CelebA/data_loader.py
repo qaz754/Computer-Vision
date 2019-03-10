@@ -14,11 +14,11 @@ import torchvision.transforms.functional as TVF
 from sklearn import preprocessing
 
 attributes = [
-    'Wearing_Lipstick'
+    'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair'
 ]
 
 hair_color_attributes = [
-    'Black_Hair', 'Blond_Hair', 'Brown_Hair'
+    'Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Gray_Hair'
 ]
 
 lipstick_attribute = [
@@ -33,12 +33,11 @@ facial = [
     '5_o_Clock_Shadow'
 ]
 
-target_attributes = [lipstick_attribute[:]]
-target_attributes1 = [lipstick_attribute[:]]
+target_attributes = [hair_color_attributes[:]]
+target_attributes1 = [hair_color_attributes[:]]
 
 #target_attributes = [facial[:], hair_color_attributes[:], bang[:], lipstick_attribute[:]]
 #target_attributes1 = [facial[:], hair_color_attributes[:], bang[:], lipstick_attribute[:]]
-
 
 def attribute_combinations(attributes=target_attributes1):
 
