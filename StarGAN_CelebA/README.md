@@ -15,7 +15,7 @@ Training was done on the entire CelebA dataset. The Architecture of the model is
 
 ## Test
 
-Tested on a face dataset found online. 
+Tested on a face dataset found online. Images that are similar to the training images in terms of crop performs well where as images that are significantly different don't perform as well as expected. 
 
 ![test_image1](img/Test/test_image_s3.png)
 
