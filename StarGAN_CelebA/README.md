@@ -3,7 +3,7 @@
 
 ## Training Progress
 
-![plot](trainloss.png)
+![plot](Train_Loss.png)
 
 ![train_image1](img/generated_image_350000.png)
 
