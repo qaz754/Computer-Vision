@@ -35,7 +35,6 @@ def accuracy(net, loader):
     '''
     A function that returns total number of correct predictions and total comparisons
     given a neural net and a pytorch data loader
-
     :param net: neural net
     :param loader: data loader
     :return:
@@ -59,7 +58,6 @@ def prediction_accuracy(net, images, labels):
     '''
     A function that returns total number of correct predictions and total comparisons
     given a neural net and a pytorch data loader
-
     :param net: neural net
     :param loader: data loader
     :return:
@@ -75,33 +73,68 @@ def prediction_accuracy(net, images, labels):
     return correct, total
 
 
-def pred_plotter(original_image, prediction, y_label):
+def plotter(env_name, num_episodes, rewards_list, ylim):
     '''
-    Used for visual inspection of how well the classifier works on an image.
-
-    Takes in the original_image, softmax class predictions for the image, and y_labels to plot a side by side graph that
-    shows what the model predicted, and what the model looks like.
-
-    :param original_image (tensor): a tensor that holds the values pixel values for the image
-    :param prediction (tensor): a tensor that holds the softmax class probabilities for original_image
-    :param y_label (list): a list that holds names for the classes.
+    Used to plot the average over time
+    :param env_name:
+    :param num_episodes:
+    :param rewards_list:
+    :param ylim:
     :return:
     '''
+    x = np.arange(0, num_episodes)
+    y = np.asarray(rewards_list)
+    plt.plot(x, y)
+    plt.ylim(top=ylim + 10)
+    plt.xlabel("Number of Episodes")
+    plt.ylabel("Avg Rewards Last 100 Episodes")
+    plt.title("Rewards Over Time For %s" %env_name)
+    plt.savefig("progress.png")
+    plt.close()
 
-    fig, (ax1, ax2) = plt.subplots(figsize=(9,6), ncols=2)
+def raw_score_plotter(scores):
+    '''
+    used to plot the raw score
+    :param scores:
+    :return:
+    '''
+    plt.plot(np.arange(len(scores)), scores)
+    plt.ylabel('Train Loss')
+    plt.xlabel('Number of Iterations')
+    plt.title("Loss Over Time")
+    plt.savefig("Train_Loss.png")
+    plt.close()
 
-    y_values = np.arange(len(y_label))
+def confusion_plot(matrix, y_category):
+    '''
+    A function that plots a confusion matrix
+    :param matrix: Confusion matrix
+    :param y_category: Names of categories.
+    :return: NA
+    '''
 
-    ax1.barh(y_values, prediction.squeeze().numpy(), align = 'center')
-    ax1.set_yticks(y_values)
-    ax1.set_yticklabels(y_label) #use the name of the classes as labels
-    ax1.invert_yaxis()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(matrix.numpy())
+    fig.colorbar(cax)
 
-    #values for the axis and the title
-    ax1.set_xlabel('Probability')
-    ax1.set_title('Class Probability')
+    # Set up axes
+    ax.set_xticklabels([''] + y_category, rotation=90)
+    ax.set_yticklabels([''] + y_category)
 
-    #shows the original_image
-    ax2.imshow(original_image.view(1, 28, 28).squeeze().numpy())
+    # Force label at every tick
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
 
+    # sphinx_gallery_thumbnail_number = 2
     plt.show()
+
+def linear_LR(epoch, opts):
+
+    if epoch < opts.const_epoch:
+        lr = opts.lr
+    else:
+        lr = np.linspace(opts.lr, 0, (opts.adaptive_epoch + 1))[epoch - opts.const_epoch]
+
+    return lr
+

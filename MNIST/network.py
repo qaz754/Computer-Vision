@@ -4,34 +4,31 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Network(nn.Module):
+class discriminator(nn.Module):
+    '''
+    Patch Discriminator used in GANS.
+    '''
 
-    def __init__(self, kernal_size, output_size, drop_p = 0.5):
-        super(Network, self).__init__()
+    def __init__(self, opts):
+        super(discriminator, self).__init__()
 
-        self.kernal_size = kernal_size
-        self.output_size = output_size
+        self.opts = opts
+        steps = []
+        in_channel = opts.D_input_channel
+        channel_up = opts.D_channel_up
 
-        # 1 color channel
-        # 10 output channel
-        # 3 X 3 conv
-        self.conv1 = nn.Conv2d(1, 10, kernal_size)
-        #kernel_size = 2, stride = 2
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(10, 20, kernal_size)
-        self.fc1 = nn.Linear(20 * 5 * 5, 50)
-        self.fc1_drop = nn.Dropout(p =drop_p)
-        self.fc2 = nn.Linear(50, output_size)
+        for i in range(opts.n_discrim_down):
+            steps += [nn.Conv2d(in_channel, channel_up, 4, 2, 1), nn.BatchNorm2d(channel_up), nn.LeakyReLU(opts.lrelu_val, True), nn.Dropout3d(opts.dropout)]
+            in_channel = channel_up
+            channel_up *= 2
 
-    def forward(self, data):
+        cls = [nn.Conv2d(in_channel, opts.num_classes, 5, 1, 1)]
 
-        x = self.pool(F.relu(self.conv1(data)))
-        x = self.pool(F.relu(self.conv2(x)))
+        self.model = nn.Sequential(*steps)
+        self.cls = nn.Sequential(*cls)
 
-        x = x.view(x.size(0), -1)
+    def forward(self, x):
 
-        x = F.relu(self.fc1(x))
-        x = self.fc1_drop(x)
-        x = self.fc2(x)
+        x = self.model(x)
 
-        return x
+        return self.cls(x).view((-1, self.opts.num_classes))

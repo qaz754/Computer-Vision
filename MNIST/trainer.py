@@ -1,22 +1,28 @@
 
 import util
 import numpy as np
+import torch
+from collections import deque
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class trainer():
 
-    def __init__(self, epochs, trainloader, model, optimizer, criterion, print_every=50):
+    def __init__(self, opts, trainloader, model, optimizer, criterion):
 
-        self.epochs = epochs
+        self.opts = opts
         self.trainloader = trainloader
         self.model = model
         self.optimizer = optimizer
         self.criterion = criterion
-        self.print_every = print_every
 
     def train(self):
         steps = 0
 
-        for e in range(self.epochs):
+        loss_deque = deque(maxlen=100)
+        train_loss = []
+
+        for e in range(self.opts.epoch):
             running_loss = 0
 
             correct = 0
@@ -25,30 +31,30 @@ class trainer():
             for images, labels in iter(self.trainloader):
                 steps += 1
 
-                # flatten mnist images into a 784 long vector
-                #images.size()[0] is the batch_size
+                output = self.model(images.to(device))
 
-                #images = images.view(images.size()[0], -1)
-                #print(images.shape)
                 self.optimizer.zero_grad()
-
-                # forward and backward passes
-
-                output = self.model.forward(images)
-                loss = self.criterion(output, labels)
+                loss = self.criterion(output, labels.to(device))
                 loss.backward()
                 self.optimizer.step()
 
                 running_loss += loss.item()
 
-                correct_, total_ = util.prediction_accuracy(self.model, images, labels)
+                pred = torch.max(output, 1)[1]
 
-                correct += correct_
-                total += total_
+                for pred, label in zip(pred, labels):
+                    if pred.cpu().item() == label.item():
+                        correct += 1
+                    total += 1
 
-                if steps % self.print_every == 0:
-                    print("Epoch: {}/{}...".format(e + 1, self.epochs),
-                          "LossL {:.4f}".format(running_loss / self.print_every),
-                          "Running Accuracy {:4f}".format(correct.numpy() / np.float(total)))
+                loss_deque.append(loss.cpu().item())
+                train_loss.append(np.mean(loss_deque))
+
+                if steps % self.opts.print_every == 0:
+                    print("Epoch: {}/{}...".format(e + 1, self.opts.epoch),
+                          "LossL {:.4f}".format(running_loss / self.opts.print_every),
+                          "Running Accuracy {:4f}".format(correct / np.float(total)))
 
                     running_loss = 0
+
+        util.raw_score_plotter(train_loss)
